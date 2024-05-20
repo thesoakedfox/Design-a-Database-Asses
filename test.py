@@ -4,7 +4,7 @@ import sqlite3
 
 DATABASE = 'pokemon.db'
 
-def execute():
+def select_name_type():
 #creating func
     with sqlite3.connect(DATABASE) as conn:
         #with statement
@@ -20,4 +20,4 @@ def execute():
         #printing results
 
 if __name__ == "__main__":
-    execute()
+    select_name_type()
