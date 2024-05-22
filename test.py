@@ -16,7 +16,15 @@ def select_name_type():
         results = cursor.fetchall()
         #executing and fetching
         for poke in results:
-            print(poke)
+            if poke[2] is not None:
+                if poke[3] is not None:
+                    print(poke[0], poke[1], poke[2], poke[3])
+                else:
+                    print(poke[0], poke[1], poke[2])
+            elif poke[3] is not None:
+                print(poke[0], poke[1], poke[3])
+            else:
+                print(poke[0], poke[1])
         #printing results
 
 if __name__ == "__main__":
