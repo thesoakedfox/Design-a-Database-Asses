@@ -8,21 +8,25 @@ def select_name_type():
 #creating func
     with sqlite3.connect(DATABASE) as conn:
         #with statement
-        cursor = conn.cursor()
+        cur = conn.cursor()
         #creating cursor
         sql = '''SELECT p.id, p.name, t1.name, t2.name from pokemon
            p JOIN type as t1 on p.type_1 = t1.type_id LEFT JOIN type
             as t2 on p.type_2 = t2.type_id;'''
         #writing query
-        cursor.execute(sql)
-        results = cursor.fetchall()
+        cur.execute(sql)
+        results = cur.fetchall()
         #executing and fetching
+        print("+------+-----------------+---------------+---------------+")
+        print("|  ID  |      Name       |    Type 1     |    Type 2     |")
+        print("+------+-----------------+---------------+---------------+")
         for poke in results:
-            poke_info = [poke[0], poke[1]]
-            for i in range(2, len(poke)):
-                if poke[i] is not None:
-                    poke_info.append(poke[i])
-            print(f"pokeid")
+            id_, name, type_1, type_2 = poke
+            type_1 = type_1 if type_1 else "-"
+            type_2 = type_2 if type_2 else "-"
+            print(f"| {id_:<4} | {name:<25} | {type_1:<9} | {type_2:<9} |")
+        print("+------+-----------------+---------------+---------------+")
+
         #printing results
 
 
