@@ -10,7 +10,9 @@ def select_name_type():
         #with statement
         cursor = conn.cursor()
         #creating cursor
-        sql = "SELECT p.id, p.name, t1.name, t2.name from pokemon p JOIN type as t1 on p.type_1 = t1.type_id LEFT JOIN type as t2 on p.type_2 = t2.type_id;"
+        sql = '''SELECT p.id, p.name, t1.name, t2.name from pokemon
+           p JOIN type as t1 on p.type_1 = t1.type_id LEFT JOIN type
+            as t2 on p.type_2 = t2.type_id;'''
         #writing query
         cursor.execute(sql)
         results = cursor.fetchall()
@@ -20,7 +22,7 @@ def select_name_type():
             for i in range(2, len(poke)):
                 if poke[i] is not None:
                     poke_info.append(poke[i])
-            print(poke_info)
+            print(f"pokeid")
         #printing results
 
 
