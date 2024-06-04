@@ -25,11 +25,10 @@ def select_name_type():
             type_1 = type_1 if type_1 else "-"
             type_2 = type_2 if type_2 else "-"
             print(f"| {id_:<4} | {name:<25} | {type_1:<9} | {type_2:<9} |")
-        print("+------+-----------------+---------------+---------------+")
-
+        print("+------+---------------------------+-----------+-----------+")
         #printing results
-
-
 
 if __name__ == "__main__":
     select_name_type()
+
+               
