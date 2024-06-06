@@ -13,12 +13,11 @@ def fetch_all_data():
                  LEFT JOIN type as t2 on p.type_2 = t2.type_id;'''
         cur.execute(sql)
         results = cur.fetchall()
-        # Call print_table function to print the results
+        #print the results
         print_table(results)
 
-# Function to print data in a tabular format
-def print_table(data):
-    # Header
+# Function to print data 
+def print_table(data):  
     print("+------+---------------------------+-------------+-----+-----+-----+--------+--------+-----+-----+--------+----------+----------+")
     print("|  ID  |            Name           | Total Stat  |  HP | ATK | DEF | Sp.Atk | Sp. Def| SPD | GEN | LEGEND |  Type 1  |  Type 2  |")
     print("+------+---------------------------+-------------+-----+-----+-----+--------+--------+-----+-----+--------+----------+----------+")
@@ -39,7 +38,7 @@ def select_name_type():
         #with statement
         cur = conn.cursor()
         #creating cursor
-        sql = '''SELECT p.id, p.name, t1.name, t2.name from pokemon
+        sql = '''SELECT p.id, p.name, t1.name, t2.name FROM pokemon
            p JOIN type as t1 on p.type_1 = t1.type_id LEFT JOIN type
             as t2 on p.type_2 = t2.type_id;'''
         #writing query
@@ -59,5 +58,4 @@ def select_name_type():
 
 if __name__ == "__main__":
     fetch_all_data()
-
                
