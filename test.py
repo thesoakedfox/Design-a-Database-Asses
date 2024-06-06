@@ -4,6 +4,22 @@ import sqlite3
 
 DATABASE = 'pokemon.db'
 
+ADMIN_USERNAME = 'OSS'
+ADMIN_PASSWORD = 'BOSS'
+
+DATABASE = 'pokemon.db'
+
+def login():
+    username = input("Please enter username(OSS): ")
+    password = input("Please enter password(BOSS): ")
+    
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        print("Login successful!")
+        return True
+    else:
+        print("Invalid credentials. Access denied.")
+        return False
+    
 def fetch_all_data():
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
