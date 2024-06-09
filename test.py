@@ -54,7 +54,28 @@ def create_table(DATABASE, table, columns):
 
         if is_unique.lower() == 'y':
            col_def += " UNIQUE"
+        
+        while True:
+            is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): ")
+            if is_primary_key.lower() in YN:
+                break
+            else:
+                print("Invalid input. Please enter 'Y' or 'N'.")
+        
+        if is_primary_key.lower() == 'y':
+            col_def += " PRIMARY KEY"
 
+        while True:
+            foreign_key = input(f"Is column '{col_name}' a foreign key? (Y/N): ")
+            if foreign_key.lower() in YN:
+                break
+            else:
+                print("Invalid input. Please enter 'Y' or 'N'.")
+
+        if foreign_key.lower() == 'y':
+            ref_table = input(f"Enter the referenced table for the foreign key: ")
+            ref_column = input(f"Enter the referenced column for the foreign key: ")
+            col_def += f" REFERENCES {ref_table}({ref_column})"
 
 
     q_table = f'"{table}"'
@@ -68,7 +89,7 @@ def create_table(DATABASE, table, columns):
             raise Exception('Connection failed.')
         else:
             print("Connected")
-            cur.executemany(sql)
+            cur.execute(sql)
             conn.commit()
             print(f"Table '{table}' created successfully.")
         
