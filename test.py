@@ -203,9 +203,7 @@ def create_table(DATABASE, table, columns):
     
     q_table = f'"{table}"'
     columns_def = ", ".join([f'"{col_name}" {col_def}' for col_name, col_def in columns.items()])
-    sql = f'''
-    DROP TABLE IF EXISTS {q_table};
-    CREATE TABLE {q_table} ({columns_def});'''
+    sql = f'''CREATE TABLE {q_table} ({columns_def});'''
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
         if not cur:
