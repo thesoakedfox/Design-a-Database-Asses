@@ -23,12 +23,25 @@ def admin_login():
         print("Invalid credentials. Access denied.")
         return False
     
+def get_table_definition(DATABASE, table):
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        cur.execute(f"PRAGMA table_info('{table}')")
+        table_info = cur.fetchall()
+        if table_info:
+            print(f"Table '{table}' definition:")
+            for column in table_info:
+                print(f"Column ID: {column[0]}, Name: {column[1]}, Type: {column[2]}, Not Null: {column[3]}, Default Value: {column[4]}, Primary Key: {column[5]}")
+        else:
+            print(f"Table '{table}' does not exist.")
+
 def ask_for_table_input():
     print("You will now be asked to input some info for the table you are creating (type 'stop' at anytime to cancel table creation)")
     table = input("Enter table name: ")
     if table.lower() == STOP_COMMAND:
         print("Cancelling table creation.")
         return None, None
+    
 
     columns = {}
     
@@ -137,7 +150,35 @@ def create_table(DATABASE, table, columns):
         return
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
-        
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name= ? ", (table,))
+        if cur.fetchone():
+            print(f"Table '{table}' already exists.")
+            print("1. Drop the existing and create a new table")
+            print("2. Add new columns to the existing table")
+            print("3. Cancel table creation")
+            userinput = input("Enter your choice (1-3): ")
+            
+            if userinput == '1':
+                cur.execute(f"DROP TABLE IF EXISTS {table}")
+                print(f"Table '{table}' dropped.")
+            elif userinput == '2':
+                for col_name, col_def in columns.items():
+                    try:
+                        cur.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}")
+                        print(f"Column '{col_name}' added to table '{table}'.")
+                    except sqlite3.OperationalError as e:
+                        print(f"Error adding column '{col_name}':", e)
+                        conn.rollback
+                conn.commit()
+                cur.execute(f"SELECT * FROM ")
+                print(f"Table '{table}' updated successfully.")
+                get_table_definition(DATABASE, table)
+                return
+            elif userinput == '3':
+                print("Table creation cancelled.")
+                return
+            else:
+                print("Invalid input. Table creation cancelled.")
     print("\nTable Name:", table)
     print("Columns:")
     for col_name, col_def in columns.items():
