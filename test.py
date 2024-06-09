@@ -16,7 +16,7 @@ def admin_login():
     username = input("Please enter username(OSS): ")
     password = input("Please enter password(BOSS): ")
     
-    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+    if username.upper()== ADMIN_USERNAME and password.upper() == ADMIN_PASSWORD:
         print("Login successful!")
         return True
     else:
@@ -300,25 +300,31 @@ def select_name_type():
 def main():
     while True:
         print("\nWhat would you like to do?")
-        print("1. Create a new table")
-        print("2. Add data to a table")
-        print("3. Fetch all data")
-        print("4. Select name and type(to be refined)")
-        print("5. Exit\n")
+        print("1. Admin Login")
+        print("2. Create a new table(Admin Only)")
+        print("3. Add data to a table")
+        print("4. Fetch all data")
+        print("5. Select name and type(to be refined)")
+        print("6. Exit\n")
         userinput = input('')
 
         if userinput == '1':
-            table, columns = ask_for_table_input()
-            if table is None or columns is None:
-                return
-            create_table(DATABASE, table, columns)
+            admin_login()
         elif userinput == '2':
-            add_data()
+            if not admin_login:
+                table, columns = ask_for_table_input()
+                if table is None or columns is None:
+                    return
+                create_table(DATABASE, table, columns)
+            else:
+                print("Aww, Login failed.")
         elif userinput == '3':
-            fetch_all_data()
+            add_data()
         elif userinput == '4':
+            fetch_all_data()
+        elif userinput == '':
             select_name_type()
-        elif userinput == '5':
+        elif userinput == '':
             print("Exited.")
             break
         else:
