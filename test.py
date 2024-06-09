@@ -309,15 +309,16 @@ def main():
         userinput = input('')
 
         if userinput == '1':
-            admin_login()
+            if admin_login():
+                print("Logged in as admin.")
         elif userinput == '2':
-            if not admin_login:
+            if admin_login():
                 table, columns = ask_for_table_input()
                 if table is None or columns is None:
-                    return
+                    continue
                 create_table(DATABASE, table, columns)
-            else:
-                print("Aww, Login failed.")
+            
+                
         elif userinput == '3':
             add_data()
         elif userinput == '4':
