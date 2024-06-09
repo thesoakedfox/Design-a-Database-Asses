@@ -157,10 +157,13 @@ def create_table(DATABASE, table, columns):
         if not cur:
             raise Exception('Connection failed.')
         else:
-            print("Connected")
-            cur.executescript(sql)
-            conn.commit()
-            print(f"Table '{table}' created successfully.")
+            try:
+                cur.executescript(sql)
+                conn.commit()
+                print(f"Table '{table}' created successfully.")
+            except sqlite3.Error as e:
+                print("An error occurred:", e)
+                conn.rollback()
 
 
 
