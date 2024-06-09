@@ -148,6 +148,7 @@ def create_table(DATABASE, table, columns):
     if table is None or columns is None:
         print("Table creation cancelled.")
         return
+    #check if table exists and drop/add new according to need
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
         cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name= ? ", (table,))
