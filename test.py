@@ -44,6 +44,7 @@ def ask_for_table_input():
     
 
     columns = {}
+    primary_key = False
     
     while True:
         col_name = input("Enter column name (leave blank to finish): ")
@@ -90,18 +91,20 @@ def ask_for_table_input():
         if is_unique.lower() == 'y':
             col_def += " UNIQUE"
 
-        is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): \n")
-        if is_primary_key.lower()== STOP_COMMAND:
-                print("Cancelling table creation.")
-                return None, None
-        while is_primary_key.lower() not in YN:
-            print("Invalid input. Please enter 'Y' or 'N'.")
-            is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): ")
+        if not primary_key:
+            is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): \n")
             if is_primary_key.lower()== STOP_COMMAND:
-                print("Cancelling table creation.")
-                return None, None
-        if is_primary_key.lower() == 'y':
-            col_def += " PRIMARY KEY"
+                    print("Cancelling table creation.")
+                    return None, None
+            while is_primary_key.lower() not in YN:
+                print("Invalid input. Please enter 'Y' or 'N'.")
+                is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): ")
+                if is_primary_key.lower()== STOP_COMMAND:
+                    print("Cancelling table creation.")
+                    return None, None
+            if is_primary_key.lower() == 'y':
+                col_def += " PRIMARY KEY"
+                primary_key = True
      
         foreign_key = input(f"Is column '{col_name}' a foreign key? (Y/N): ")
         if foreign_key.lower()== STOP_COMMAND:
