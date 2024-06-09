@@ -161,6 +161,15 @@ def create_table(DATABASE, table, columns):
             
             if userinput == '1':
                 cur.execute(f"DROP TABLE IF EXISTS {table}")
+                with sqlite3.connect(DATABASE) as conn:
+                    cur = conn.cursor()
+                    # Query to get all table names
+                    cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+                    tables = cur.fetchall()
+                    if tables:
+                        print("List of tables currently in the database:")
+                        for table in tables:
+                            print(table[0])
                 print(f"Table '{table}' dropped.")
             elif userinput == '2':
                 for col_name, col_def in columns.items():
