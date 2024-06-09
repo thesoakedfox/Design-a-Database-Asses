@@ -77,7 +77,7 @@ def ask_for_table_input():
         if is_unique.lower() == 'y':
             col_def += " UNIQUE"
 
-        is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): ")
+        is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): \n")
         if is_primary_key.lower()== STOP_COMMAND:
                 print("Cancelling table creation.")
                 return None, None
@@ -135,6 +135,9 @@ def create_table(DATABASE, table, columns):
     if table is None or columns is None:
         print("Table creation cancelled.")
         return
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        
     print("\nTable Name:", table)
     print("Columns:")
     for col_name, col_def in columns.items():
@@ -240,12 +243,34 @@ def select_name_type():
         print("+------+---------------------------+-----------+-----------+")
         #printing results
 
-def main():
-    table, columns = ask_for_table_input()
-    if table is None or columns is None:
-        return
-    create_table(DATABASE, table, columns)
 
+#main code
+def main():
+    while True:
+        print("\nWhat would you like to do?")
+        print("1. Create a new table")
+        print("2. Add data to a table")
+        print("3. Fetch all data")
+        print("4. Select name and type(to be refined)")
+        print("5. Exit\n")
+        userinput = input('')
+
+        if userinput == '1':
+            table, columns = ask_for_table_input()
+            if table is None or columns is None:
+                return
+            create_table(DATABASE, table, columns)
+        elif userinput == '2':
+            add_data()
+        elif userinput == '3':
+            fetch_all_data()
+        elif userinput == '4':
+            select_name_type()
+        elif userinput == '5':
+            print("Exited.")
+            break
+        else:
+            print("Invalid input. Please enter a number between 1 and 5.")
 if __name__ == "__main__":
     main()
                
