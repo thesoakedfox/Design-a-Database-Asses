@@ -6,7 +6,8 @@ DATABASE = 'pokemon.db'
 
 ADMIN_USERNAME = 'OSS'
 ADMIN_PASSWORD = 'BOSS'
-STOP_COMMAND = 'stop'
+STOP_CMD = 'stop'
+BACK_CMD = 'back'
 DATABASE = 'pokemon.db'
 
 YN = ['y', 'n']
@@ -22,10 +23,23 @@ def admin_login():
     else:
         print("Invalid credentials. Access denied.")
         return False
+
+def custom_query(query):
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor
+        if not cur:
+            raise Exception('Connection failed.')
+        try:
+          cur.execute(f"?", (query,))
+        except sqlite3.OperationalError as e:
+            print(f"Error:", e)
+            conn.rollback
     
 def get_table_definition(DATABASE, table):
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
+        if not cur:
+            raise Exception('Connection failed.')
         cur.execute(f"PRAGMA table_info('{table}')")
         table_info = cur.fetchall()
         if table_info:
@@ -38,7 +52,7 @@ def get_table_definition(DATABASE, table):
 def ask_for_table_input():
     print("You will now be asked to input some info for the table you are creating (type 'stop' at anytime to cancel table creation)")
     table = input("Enter table name: ")
-    if table.lower() == STOP_COMMAND:
+    if table.lower() == STOP_CMD:
         print("Cancelling table creation.")
         return None, None
     
@@ -47,45 +61,53 @@ def ask_for_table_input():
     primary_key = False
     
     while True:
-        col_name = input("Enter column name (leave blank to finish): ")
-        if col_name.lower() == STOP_COMMAND:
+        col_name = input("Enter column name (leave blank to finish or type 'back' to delete last column: ")
+        if col_name.lower() == STOP_CMD:
             print("Cancelling table creation.")
             return None, None
+        elif col_name.lower() == BACK_CMD:
+            if columns:
+                print("Reversing last change.")
+                columns.popitem()  # Remove the last column added
+                continue
+            else:
+                print("No previous step to go back to.")
+                continue
         elif not col_name:
             break
 
         col_def = input(f"Enter data type for column '{col_name}': ").upper()
-        if col_def.lower() == STOP_COMMAND:
+        if col_def.lower() == STOP_CMD:
             print("Cancelling table creation.")
             return None, None
         while col_def.lower() not in ['int', 'integer', 'text', 'real', 'blob']:
             print("Invalid data type.\nTypes allowed are: INT, INTEGER, TEXT, REAL, BLOB")
             col_def = input(f"Enter data type for column '{col_name}': ")
-            if col_def.lower() == STOP_COMMAND:
+            if col_def.lower() == STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
 
         allow_null = input(f"Should column '{col_name}' allow null values? (Y/N): ")
-        if allow_null.lower() == STOP_COMMAND:
+        if allow_null.lower() == STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
         while allow_null.lower() not in YN:
             print("Invalid input. Please enter 'Y' or 'N'.")
             allow_null = input(f"Should column '{col_name}' allow null values? (Y/N): ")
-            if allow_null.lower() == STOP_COMMAND:
+            if allow_null.lower() == STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
         if allow_null.lower() == 'n':
             col_def += " NOT NULL"
 
         is_unique = input(f"Should column '{col_name}' be unique? (Y/N): ")
-        if is_unique.lower()== STOP_COMMAND:
+        if is_unique.lower()== STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
         while is_unique.lower() not in YN:
             print("Invalid input. Please enter 'Y' or 'N'.")
             is_unique = input(f"Should column '{col_name}' be unique? (Y/N): ")
-            if is_unique.lower()== STOP_COMMAND:
+            if is_unique.lower()== STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
         if is_unique.lower() == 'y':
@@ -93,13 +115,13 @@ def ask_for_table_input():
 
         if not primary_key:
             is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): \n")
-            if is_primary_key.lower()== STOP_COMMAND:
+            if is_primary_key.lower()== STOP_CMD:
                     print("Cancelling table creation.")
                     return None, None
             while is_primary_key.lower() not in YN:
                 print("Invalid input. Please enter 'Y' or 'N'.")
                 is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): ")
-                if is_primary_key.lower()== STOP_COMMAND:
+                if is_primary_key.lower()== STOP_CMD:
                     print("Cancelling table creation.")
                     return None, None
             if is_primary_key.lower() == 'y':
@@ -107,29 +129,31 @@ def ask_for_table_input():
                 primary_key = True
      
         foreign_key = input(f"Is column '{col_name}' a foreign key? (Y/N): ")
-        if foreign_key.lower()== STOP_COMMAND:
+        if foreign_key.lower()== STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
         while foreign_key.lower() not in YN:
             print("Invalid input. Please enter 'Y' or 'N'.")
             foreign_key = input(f"Is column '{col_name}' a foreign key? (Y/N): ")
-            if foreign_key.lower()== STOP_COMMAND:
+            if foreign_key.lower()== STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
         if foreign_key.lower() == 'y':
             while True:
                 ref_table = input(f"Enter the referenced table for the foreign key: ")
-                if ref_table.lower()== STOP_COMMAND:
+                if ref_table.lower()== STOP_CMD:
                   print("Cancelling table creation.")
                   return None, None
                 ref_column = input(f"Enter the referenced column for the foreign key: ")
-                if ref_column.lower()== STOP_COMMAND:
+                if ref_column.lower()== STOP_CMD:
                     print("Cancelling table creation.")
                     return None, None
                 try:
                     # Check if the referenced table and column exist in the database
                     with sqlite3.connect(DATABASE) as conn:
                         cur = conn.cursor()
+                        if not cur:
+                            raise Exception('Connection failed.')
                         cur.execute(f"PRAGMA table_info('{ref_table}')")
                         table_info = cur.fetchall()
                         if not any(ref_column == col[1] for col in table_info):
@@ -154,6 +178,8 @@ def create_table(DATABASE, table, columns):
     #check if table exists and drop/add new according to need
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
+        if not cur:
+            raise Exception('Connection failed.')
         cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name= ? ", (table,))
         if cur.fetchone():
             print(f"Table '{table}' already exists.")
@@ -166,6 +192,8 @@ def create_table(DATABASE, table, columns):
                 cur.execute(f"DROP TABLE IF EXISTS {table}")
                 with sqlite3.connect(DATABASE) as conn:
                     cur = conn.cursor()
+                    if not cur:
+                        raise Exception('Connection failed.')
                     # Query to get all table names
                     cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
                     tables = cur.fetchall()
@@ -305,18 +333,36 @@ def main():
         print("3. Add data to a table")
         print("4. Fetch all data")
         print("5. Select name and type(to be refined)")
+        print("Custom query(Admin Only)")
         print("6. Exit\n")
         userinput = input('')
 
         if userinput == '1':
-            if admin_login():
-                print("Logged in as admin.")
+            admin_login():
+            
         elif userinput == '2':
             if admin_login():
-                table, columns = ask_for_table_input()
-                if table is None or columns is None:
-                    continue
-                create_table(DATABASE, table, columns)
+                print("1. Create table manually.")
+                print("2. Create table using query.")
+                print("3. Go back.")
+                input1 = input('')
+                while True:
+                    if input1 == '1':
+                        table, columns = ask_for_table_input()
+                        if table is None or columns is None:
+                            break
+                        create_table(DATABASE, table, columns)
+                        break
+                    elif input1 == '2':
+                        query = input("What query would you like to do?")
+                        custom_query(query)
+                        break
+                    elif input1 == '3':
+                        break
+                    else:
+                        print("Invalid input. Please enter a number between 1 and 3.")
+
+                    
             
                 
         elif userinput == '3':
@@ -325,6 +371,10 @@ def main():
             fetch_all_data()
         elif userinput == '':
             select_name_type()
+        elif userinput == '':
+            if admin_login():
+                query = input("What query would you like to do?")
+                custom_query(query)
         elif userinput == '':
             print("Exited.")
             break
