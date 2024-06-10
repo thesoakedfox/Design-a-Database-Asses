@@ -467,7 +467,7 @@ def main():
                     else:
                         print("Invalid input. Please enter a number between 1 and 3.")
 
-                    elif userinput == '3':
+        elif userinput == '3':
             add_data()
         elif userinput == '4':
             fetch_all_data()
