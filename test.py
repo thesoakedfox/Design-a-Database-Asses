@@ -438,7 +438,8 @@ def main():
         print("4. Fetch all data")
         print("5. Select name and type(to be refined)")
         print("6. Custom query(Admin Only)")
-        print("7. Exit\n")
+        print("7. SANDSLASH!")
+        print("8. Exit\n")
         userinput = input('')
 
         if userinput == '1':
@@ -466,10 +467,7 @@ def main():
                     else:
                         print("Invalid input. Please enter a number between 1 and 3.")
 
-                    
-            
-                
-        elif userinput == '3':
+                    elif userinput == '3':
             add_data()
         elif userinput == '4':
             fetch_all_data()
@@ -480,6 +478,8 @@ def main():
                 query = input("What query would you like to do?")
                 custom_query(query)
         elif userinput == '7':
+            sandslash()
+        elif userinput == '8':
             print("Exited.")
             break
         else:
