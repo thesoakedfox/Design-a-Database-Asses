@@ -113,24 +113,51 @@ ADMIN_PASSWORD = 'BOSS'
 STOP_CMD = 'stop'
 BACK_CMD = 'back'
 DATABASE = 'pokemon.db'
-
 YN = ['y', 'n']
 
 
-def admin_login():
+def admin_login(admin):
     username = input("Please enter username(OSS): ")
     password = input("Please enter password(BOSS): ")
     
-    if username.upper()== ADMIN_USERNAME and password.upper() == ADMIN_PASSWORD:
+    if username.upper() == ADMIN_USERNAME and password.upper() == ADMIN_PASSWORD:
         print("Login successful!")
         return True
     else:
         print("Invalid credentials. Access denied.")
         return False
 
+def print_databaseinfo():
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        if not cur:
+            raise Exception('Connection failed.')
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cur.fetchall()
+
+        print("Database tables:")
+        for table in tables:
+            table_name = table[0]
+            print(f"Table Name: {table_name}")
+            cur.execute(f"PRAGMA table_info('{table_name}');")
+            columns = cur.fetchall()
+            print("Columns:")
+            print("+------+-----------------+---------------+---------------+")
+            print("| ID   | Name            | Type          | Nullable      |")
+            print("+------+-----------------+---------------+---------------+")
+            for column in columns:
+                col_id = column[0]
+                col_name = column[1]
+                col_type = column[2]
+                nullable = 'YES' if column[3] else 'NO'
+                print(f"| {col_id:<4} | {col_name:<15} | {col_type:<13} | {nullable:<13} |")
+            print("+------+-----------------+---------------+---------------+")
+                
+
+
 def custom_query(query):
     with sqlite3.connect(DATABASE) as conn:
-        cur = conn.cursor
+        cur = conn.cursor()
         if not cur:
             raise Exception('Connection failed.')
         try:
@@ -443,23 +470,47 @@ def select_name_type():
 
 #main code
 def main():
+    admin = False
     while True:
         print("\nWhat would you like to do?")
-        print("1. Admin Login")
-        print("2. Create a new table(Admin Only)")
-        print("3. Add data to a table")
-        print("4. Fetch all data")
-        print("5. Select name and type(to be refined)")
-        print("6. Custom query(Admin Only)")
-        print("7. SANDSLASH!")
-        print("0. Exit\n")
+        print("1. Create a new table(Admin Only)")
+        print("2. Add data to a table")
+        print("3. Fetch all data")
+        print("4. Select name and type(to be refined)")
+        print("5. Custom query(Admin Only)")
+        print("6. SANDSLASH!")
+        print("7. Exit")
+        if not admin:
+            print("0. Admin Login\n")
         userinput = input('')
 
-        if userinput == '1':
-            admin_login()
+        if userinput == '0':
+            admin = admin_login(admin)
             
-        elif userinput == '2':
-            if admin_login():
+        elif userinput == '1' and admin:
+            print("1. Create table manually.")
+            print("2. Create table using query.")
+            print("3. Go back.")
+            input1 = input('')
+            while True:
+                if input1 == '1':
+                    table, columns = ask_for_table_input()
+                    if table is None or columns is None:
+                        break
+                    create_table(DATABASE, table, columns)
+                    break
+                elif input1 == '2':
+                    print_databaseinfo()
+                    query = input("What query would you like to do?")
+                    custom_query(query)
+                    break
+                elif input1 == '3':
+                    break
+                else:
+                    print("Invalid input. Please enter a number between 1 and 3.")
+        elif userinput == '1' and not admin:
+            admin = admin_login(admin)
+            if admin:
                 print("1. Create table manually.")
                 print("2. Create table using query.")
                 print("3. Go back.")
@@ -472,6 +523,7 @@ def main():
                         create_table(DATABASE, table, columns)
                         break
                     elif input1 == '2':
+                        print_databaseinfo()
                         query = input("What query would you like to do?")
                         custom_query(query)
                         break
@@ -480,23 +532,39 @@ def main():
                     else:
                         print("Invalid input. Please enter a number between 1 and 3.")
 
-        elif userinput == '3':
+        elif userinput == '2' and admin:
             add_data()
-        elif userinput == '4':
+
+        elif userinput == '2' and not admin:
+            admin = admin_login(admin)
+            if admin:
+                pass
+
+        elif userinput == '3':
             fetch_all_data()
-        elif userinput == '5':
+
+        elif userinput == '4':
             select_name_type()
-        elif userinput == '6':
-            if admin_login():
+
+        elif userinput == '5' and admin:
+                print_databaseinfo()
                 query = input("What query would you like to do?")
                 custom_query(query)
-        elif userinput == '7':
+        elif userinput == '5' and not admin:
+            admin = admin_login(admin)
+            if admin:
+                print_databaseinfo()
+                query = input("What query would you like to do?")
+                custom_query(query)
+
+
+        elif userinput == '6':
             sandslash()
-        elif userinput == '0':
+        elif userinput == '7':
             print("Exited.")
             break
         else:
-            print("Invalid input. Please enter a number between 0 and 7.")
+            print("Invalid input. Please enter a number between 1 and 8.")
 if __name__ == "__main__":
     main()
 
