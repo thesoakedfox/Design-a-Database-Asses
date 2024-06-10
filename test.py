@@ -229,8 +229,21 @@ def ask_for_table_input():
                     print("Cancelling table creation.")
                     return None, None
             if is_primary_key.lower() == 'y':
-                col_def += " PRIMARY KEY"
                 primary_key = True
+                auto_increment = input(f"Should column '{col_name}' auto-increment? (Y/N): ").lower()
+                if auto_increment == STOP_CMD:
+                    print("Cancelling table creation.")
+                    return None, None
+                while auto_increment not in YN:
+                    print("Invalid input. Please enter 'Y' or 'N'.")
+                    auto_increment = input(f"Should column '{col_name}' auto-increment? (Y/N): ").lower()
+                    if auto_increment == STOP_CMD:
+                        print("Cancelling table creation.")
+                        return None, None
+                if auto_increment == 'y':
+                    col_def = "INTEGER PRIMARY KEY AUTOINCREMENT"
+                else:
+                    col_def += " PRIMARY KEY"
      
         foreign_key = input(f"Is column '{col_name}' a foreign key? (Y/N): ")
         if foreign_key.lower()== STOP_CMD:
@@ -439,7 +452,7 @@ def main():
         print("5. Select name and type(to be refined)")
         print("6. Custom query(Admin Only)")
         print("7. SANDSLASH!")
-        print("8. Exit\n")
+        print("0. Exit\n")
         userinput = input('')
 
         if userinput == '1':
@@ -479,11 +492,11 @@ def main():
                 custom_query(query)
         elif userinput == '7':
             sandslash()
-        elif userinput == '8':
+        elif userinput == '0':
             print("Exited.")
             break
         else:
-            print("Invalid input. Please enter a number between 1 and 5.")
+            print("Invalid input. Please enter a number between 0 and 7.")
 if __name__ == "__main__":
     main()
 
