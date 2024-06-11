@@ -192,7 +192,7 @@ def custom_query(query):
             raise Exception('Connection failed.')
         try:
           cur.execute(query)
-          results = cur.fetchall
+          results = cur.fetchall()
           for row in results:
               print(row)
         except sqlite3.OperationalError as e:
