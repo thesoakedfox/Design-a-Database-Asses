@@ -1,8 +1,12 @@
 '''code to execute sql queries by Andi Dai 05/09'''
 import sqlite3
 #importing
-      
+
+
 def sandslash():
+    '''
+    Function to print The coolest pokemon - by Mr O'Sullivan
+    '''
     print("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
     print("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMNKkx0WMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
     print("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMWXkl:;. :XMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
@@ -106,6 +110,7 @@ def sandslash():
     print("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM")
     print("MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM") 
 
+#stating constants
 DATABASE = 'pokemon.db'
 
 ADMIN_USERNAME = 'OSS'
@@ -114,33 +119,52 @@ STOP_CMD = 'stop'
 BACK_CMD = 'back'
 DATABASE = 'pokemon.db'
 YN = ['y', 'n']
+#list for yes/no validation
 
 
 def admin_login(admin):
+    '''
+    Prompts the user to enter login details and verifies them
+
+    Parameters:
+    admin : current login status
+
+    Returns:
+    Boolean based on login status
+
+    '''
+    #prompts for input
     username = input("Please enter username(OSS): ")
     password = input("Please enter password(BOSS): ")
-    
+
+    #check input    
     if username.upper() == ADMIN_USERNAME and password.upper() == ADMIN_PASSWORD:
-        print("Login successful!")
+        print("\nLogin successful!")
         return True
     else:
-        print("Invalid credentials. Access denied.")
+        print("\nInvalid credentials. Access denied.")
         return False
 
 def print_databaseinfo():
+    '''
+    Function to print out database info(tables, columns attributes)
+    '''
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
         if not cur:
             raise Exception('Connection failed.')
+        #selecting table names
         cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cur.fetchall()
 
         print("Database tables:")
+        #printing table attributes
         for table in tables:
             table_name = table[0]
             print(f"Table Name: {table_name}")
             cur.execute(f"PRAGMA table_info('{table_name}');")
             columns = cur.fetchall()
+            #printing column attributes
             print("Columns:")
             print("+------+-----------------+---------------+---------------+")
             print("| ID   | Name            | Type          | Nullable      |")
@@ -156,6 +180,12 @@ def print_databaseinfo():
 
 
 def custom_query(query):
+    '''
+    Funtion to execute a custom query entered by users
+
+    Parameters:
+    query(str) - query entered by user
+    '''
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
         if not cur:
@@ -164,16 +194,27 @@ def custom_query(query):
           cur.execute(f"?", (query,))
         except sqlite3.OperationalError as e:
             print(f"Error:", e)
+            #revert last change in case of error
             conn.rollback
     
 def get_table_definition(DATABASE, table):
+    '''
+    Function to print definition of desired table
+
+    Parameters:
+    DATABASE(str) - database file name
+    table(str) - desired table name
+    '''
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
         if not cur:
             raise Exception('Connection failed.')
+        #searching for definition
         cur.execute(f"PRAGMA table_info('{table}')")
         table_info = cur.fetchall()
+        #checking if table exists
         if table_info:
+            #printing info
             print(f"Table '{table}' definition:")
             for column in table_info:
                 print(f"Column ID: {column[0]}, Name: {column[1]}, Type: {column[2]}, Not Null: {column[3]}, Default Value: {column[4]}, Primary Key: {column[5]}")
@@ -181,32 +222,43 @@ def get_table_definition(DATABASE, table):
             print(f"Table '{table}' does not exist.")
 
 def ask_for_table_input():
+    '''
+    asks the user/prompts for information to be used for table creation
+    
+    Returns:
+    tuple - table name and dictionary of table information, or (None, None) if user cancels table creation.
+
+    '''
     print("You will now be asked to input some info for the table you are creating (type 'stop' at anytime to cancel table creation)")
     table = input("Enter table name: ")
     if table.lower() == STOP_CMD:
         print("Cancelling table creation.")
         return None, None
     
-
+    #creating column list and initialising primary key state
     columns = {}
     primary_key = False
     
+    #while loop to repeat the process of asking table information and definition
     while True:
         col_name = input("Enter column name (leave blank to finish or type 'back' to delete last column: ")
         if col_name.lower() == STOP_CMD:
             print("Cancelling table creation.")
             return None, None
         elif col_name.lower() == BACK_CMD:
+            # Remove the last column added
             if columns:
                 print("Reversing last change.")
-                columns.popitem()  # Remove the last column added
+                columns.popitem()  
                 continue
             else:
                 print("No previous step to go back to.")
                 continue
         elif not col_name:
             break
+        
 
+        #prompts for table definition(data type, if null, unique, primaryy key, foreign key·)
         col_def = input(f"Enter data type for column '{col_name}': ").upper()
         if col_def.lower() == STOP_CMD:
             print("Cancelling table creation.")
@@ -217,7 +269,7 @@ def ask_for_table_input():
             if col_def.lower() == STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
-
+        #
         allow_null = input(f"Should column '{col_name}' allow null values? (Y/N): ")
         if allow_null.lower() == STOP_CMD:
                 print("Cancelling table creation.")
@@ -391,7 +443,6 @@ def create_table(DATABASE, table, columns):
             except sqlite3.Error as e:
                 print("An error occurred:", e)
                 conn.rollback()
-
 
 
 
