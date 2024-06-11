@@ -421,7 +421,7 @@ def create_table(DATABASE, table, columns):
     for col_name, col_def in columns.items():
         print(f"- {col_name}: {col_def}")
     confirmation = input("Do you want to proceed with table creation? (Y/N): ")
-    while confirmation not in YN:
+    while confirmation.lower() not in YN:
         print("Invalid input. Please enter 'Y' or 'N'.")
         confirmation = input("Do you want to proceed with table creation? (Y/N): ")
     if confirmation.lower() != 'y':
@@ -444,17 +444,59 @@ def create_table(DATABASE, table, columns):
                 print("An error occurred:", e)
                 conn.rollback()
 
-
-
-
-
-
-
-
-
-def add_data():
-    pass
+def add_data_to_table():
+    """
+    Prompts the user for the table name and the column data to add new rows to an existing table.
+    """
+    table = input("Enter the name of the table to which you want to add data: ")
     
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        if not cur:
+            raise Exception('Connection failed.')
+        
+        # Check if the table exists
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", (table,))
+        if not cur.fetchone():
+            print(f"Table '{table}' does not exist.")
+            return
+        
+        # Get column names
+        cur.execute(f"PRAGMA table_info({table});")
+        columns_info = cur.fetchall()
+        columns = [info[1] for info in columns_info]
+        
+        while True:
+            print(f"Columns in table '{table}': {', '.join(columns)}")
+            values = []
+            for col in columns:
+                value = input(f"Enter value for column '{col}' (or type '{STOP_CMD}' to cancel): ")
+                if value.lower() == STOP_CMD:
+                    print("Cancelling data addition.")
+                    return
+                values.append(value)
+            
+            placeholders = ', '.join('?' * len(values))
+            query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
+            
+            try:
+                cur.execute(query, values)
+                conn.commit()
+                print(f"Data added successfully to table '{table}'!")
+            except sqlite3.IntegrityError as e:
+                print(f"Integrity error: {e}")
+                conn.rollback()
+            except sqlite3.OperationalError as e:
+                print(f"Operational error: {e}")
+                conn.rollback()
+
+            more_data = input("Do you want to add more data? (Y/N): ").lower()
+            if more_data not in YN:
+                print("Invalid input. Please enter 'Y' or 'N'.")
+                more_data = input("Do you want to add more data? (Y/N): ").lower()
+            if more_data == 'n':
+                break
+            
 #function to fetch all data    
 def fetch_all_data():
     with sqlite3.connect(DATABASE) as conn:
@@ -525,10 +567,10 @@ def main():
     while True:
         print("\nWhat would you like to do?")
         print("1. Create a new table(Admin Only)")
-        print("2. Add data to a table")
-        print("3. Fetch all data")
-        print("4. Select name and type(to be refined)")
-        print("5. Custom query(Admin Only)")
+        print("2. Fetch all data")
+        print("3. Select name and type(to be refined)")
+        print("4. Custom query(Admin Only)")
+        print("5. Add data to table")
         print("6. SANDSLASH!")
         print("7. Exit")
         if not admin:
@@ -583,30 +625,44 @@ def main():
                     else:
                         print("Invalid input. Please enter a number between 1 and 3.")
 
-        elif userinput == '2' and admin:
-            add_data()
-
-        elif userinput == '2' and not admin:
-            admin = admin_login(admin)
-            if admin:
-                pass
-
-        elif userinput == '3':
+        elif userinput == '2':
             fetch_all_data()
 
-        elif userinput == '4':
+        elif userinput == '3':
             select_name_type()
 
-        elif userinput == '5' and admin:
-                print_databaseinfo()
-                query = input("What query would you like to do?")
-                custom_query(query)
-        elif userinput == '5' and not admin:
+        elif userinput == '4' and admin:
+            print_databaseinfo()
+            query = input("What query would you like to do?")
+            custom_query(query)
+            while True:
+                u_input = input("Do you want to do more queries? (Y/N): ")
+                if u_input.lower() not in YN:
+                    print("Invalid input. Please enter 'Y' or 'N'.")
+                elif u_input.lower() == 'n':
+                    break
+                elif u_input.lower() == 'y':
+                    query = input("What query would you like to do?")
+                    custom_query(query)
+            
+        elif userinput == '4' and not admin:
             admin = admin_login(admin)
             if admin:
                 print_databaseinfo()
                 query = input("What query would you like to do?")
                 custom_query(query)
+                while True:
+                    u_input = input("Do you want to do more queries? (Y/N): ")
+                    if u_input.lower() not in YN:
+                        print("Invalid input. Please enter 'Y' or 'N'.")
+                    elif u_input.lower() == 'n':
+                        break
+                    elif u_input.lower() == 'y':
+                        query = input("What query would you like to do?")
+                        custom_query(query)
+        elif userinput == '5':
+            add_data_to_table()
+
 
 
         elif userinput == '6':
