@@ -191,7 +191,10 @@ def custom_query(query):
         if not cur:
             raise Exception('Connection failed.')
         try:
-          cur.execute(f"?", (query,))
+          cur.execute(query)
+          results = cur.fetchall
+          for row in results:
+              print(row)
         except sqlite3.OperationalError as e:
             print(f"Error:", e)
             #revert last change in case of error
@@ -594,7 +597,7 @@ def main():
                     break
                 elif input1 == '2':
                     print_databaseinfo()
-                    query = input("What query would you like to do?")
+                    query = input("What query would you like to do?\n")
                     custom_query(query)
                     break
                 elif input1 == '3':
@@ -617,7 +620,7 @@ def main():
                         break
                     elif input1 == '2':
                         print_databaseinfo()
-                        query = input("What query would you like to do?")
+                        query = input("What query would you like to do?\n")
                         custom_query(query)
                         break
                     elif input1 == '3':
@@ -633,32 +636,32 @@ def main():
 
         elif userinput == '4' and admin:
             print_databaseinfo()
-            query = input("What query would you like to do?")
+            query = input("What query would you like to do?\n")
             custom_query(query)
             while True:
-                u_input = input("Do you want to do more queries? (Y/N): ")
+                u_input = input("Do you want to do more queries? (Y/N): \n")
                 if u_input.lower() not in YN:
-                    print("Invalid input. Please enter 'Y' or 'N'.")
+                    print("Invalid input. Please enter 'Y' or 'N'.\n")
                 elif u_input.lower() == 'n':
                     break
                 elif u_input.lower() == 'y':
-                    query = input("What query would you like to do?")
+                    query = input("What query would you like to do?\n")
                     custom_query(query)
             
         elif userinput == '4' and not admin:
             admin = admin_login(admin)
             if admin:
                 print_databaseinfo()
-                query = input("What query would you like to do?")
+                query = input("What query would you like to do?\n")
                 custom_query(query)
                 while True:
-                    u_input = input("Do you want to do more queries? (Y/N): ")
+                    u_input = input("Do you want to do more queries? (Y/N): \n")
                     if u_input.lower() not in YN:
-                        print("Invalid input. Please enter 'Y' or 'N'.")
+                        print("Invalid input. Please enter 'Y' or 'N'.\n")
                     elif u_input.lower() == 'n':
                         break
                     elif u_input.lower() == 'y':
-                        query = input("What query would you like to do?")
+                        query = input("What query would you like to do?\n")
                         custom_query(query)
         elif userinput == '5':
             add_data_to_table()
