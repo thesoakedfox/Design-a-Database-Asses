@@ -479,13 +479,23 @@ def add_data_to_table():
                     return
                 values.append(value)
             
-            placeholders = ', '.join('?' * len(values))
-            query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
+            p = ', '.join('?' * len(values))
+            query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({p})"
             
             try:
                 cur.execute(query, values)
                 conn.commit()
                 print(f"Data added successfully to table '{table}'!")
+                cur.execute(f"SELECT * FROM {table} WHERE rowid = last_insert_rowid()")
+                added_data = cur.fetchone()
+                if added_data:
+                    col_names = [info[1] for info in columns_info]
+                    print("Added Data:")
+                    print("+------+-----------------+---------------+---------------+")
+                    print("| RowID |", " | ".join([f"{name:^15}" for name in col_names]), "|")
+                    print("+------+-----------------+---------------+---------------+")
+                    print(f"| {added_data[0]:^6} |", " | ".join([f"{str(val):^15}" for val in added_data[1:]]), "|")
+                    print("+------+-----------------+---------------+---------------+")
             except sqlite3.IntegrityError as e:
                 print(f"Integrity error: {e}")
                 conn.rollback()
@@ -494,44 +504,11 @@ def add_data_to_table():
                 conn.rollback()
 
             more_data = input("Do you want to add more data? (Y/N): ").lower()
-            if more_data not in YN:
+            while more_data not in YN:
                 print("Invalid input. Please enter 'Y' or 'N'.")
                 more_data = input("Do you want to add more data? (Y/N): ").lower()
             if more_data == 'n':
                 break
-            
-#function to fetch all data    
-def fetch_all_data():
-    with sqlite3.connect(DATABASE) as conn:
-        cur = conn.cursor()
-        if not cur:
-            raise Exception('Connection failed.')
-        else: print("Connected")
-        
-        sql = '''SELECT p.id, p.name, p.total_stat, p.hp, p.atk, p.def, p.sp_atk, p.sp_def, p.spd, p.gen, p.legend, t1.name, t2.name 
-                 FROM pokemon p 
-                 JOIN type as t1 on p.type_1 = t1.type_id 
-                 LEFT JOIN type as t2 on p.type_2 = t2.type_id;'''
-        cur.execute(sql)
-        results = cur.fetchall()
-        #print the results
-        print_table(results)
-
-
-
-# Function to print data 
-def print_table(data):  
-    print("+------+---------------------------+-------------+-----+-----+-----+--------+--------+-----+-----+--------+----------+----------+")
-    print("|  ID  |            Name           | Total Stat  |  HP | ATK | DEF | Sp.Atk | Sp. Def| SPD | GEN | LEGEND |  Type 1  |  Type 2  |")
-    print("+------+---------------------------+-------------+-----+-----+-----+--------+--------+-----+-----+--------+----------+----------+")
-    
-    # Data rows
-    for row in data:
-        type_1 = row[-2] if row[-2] else "-"
-        type_2 = row[-1] if row[-1] else "-"
-        row = row[:-2] + (type_1, type_2)
-        print("| {:<4} | {:<25} | {:<11} | {:<3} | {:<3} | {:<3} | {:<6} | {:<6} | {:<3} | {:<3} | {:<6} | {:<8} | {:<8} |".format(*row))
-    print("+------+---------------------------+-------------+-----+-----+-----+--------+--------+-----+-----+--------+----------+----------+")
 
 #function to select name and type
 def select_name_type():
@@ -663,8 +640,16 @@ def main():
                     elif u_input.lower() == 'y':
                         query = input("What query would you like to do?\n")
                         custom_query(query)
-        elif userinput == '5':
+        
+        elif userinput == '5' and admin:
+            print_databaseinfo()
             add_data_to_table()
+
+        elif userinput == '5' and not admin:
+            admin = admin_login(admin)
+            if admin:
+                print_databaseinfo()
+                add_data_to_table()
 
 
 
