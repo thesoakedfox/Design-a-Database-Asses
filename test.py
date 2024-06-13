@@ -278,8 +278,9 @@ def ask_for_table_input():
                 continue
         elif not col_name:
             break
-        elif col_name in existing_columns:
-            print(f"Column '{col_name}' already exists in table '{table}'. Please enter a different column name.")
+
+        if col_name in existing_columns or col_name in columns:
+            print(f"Column '{col_name}' already exists in table '{table}' or is already defined previously. Please enter a different column name.")
             continue
         
 
@@ -307,19 +308,6 @@ def ask_for_table_input():
                 return None, None
         if allow_null.lower() == 'n':
             col_def += " NOT NULL"
-
-        is_unique = input(f"Should column '{col_name}' be unique? (Y/N): ")
-        if is_unique.lower()== STOP_CMD:
-                print("Cancelling table creation.")
-                return None, None
-        while is_unique.lower() not in YN:
-            print("Invalid input. Please enter 'Y' or 'N'.")
-            is_unique = input(f"Should column '{col_name}' be unique? (Y/N): ")
-            if is_unique.lower()== STOP_CMD:
-                print("Cancelling table creation.")
-                return None, None
-        if is_unique.lower() == 'y':
-            col_def += " UNIQUE"
 
         if not primary_key:
             is_primary_key = input(f"Is column '{col_name}' a primary key? (Y/N): \n")
@@ -426,7 +414,7 @@ def create_table(DATABASE, table, columns):
             elif userinput == '2':
                 for col_name, col_def in columns.items():
                     try:
-                        cur.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}")
+                        cur.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def} DEFAULT NULL")
                         print(f"Column '{col_name}' added to table '{table}'.")
                     except sqlite3.OperationalError as e:
                         print(f"Error adding column '{col_name}':", e)
