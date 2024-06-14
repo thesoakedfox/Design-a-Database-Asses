@@ -2,6 +2,18 @@
 import sqlite3
 #importing
 
+import random
+
+class Colors:
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    MAGENTA = '\033[95m'
+    RED = '\033[91m'
+    CYAN = '\033[96m'
+    RESET = '\033[0m'
+
+
+
 
 def sandslash():
     '''
@@ -408,8 +420,8 @@ def create_table(DATABASE, table, columns):
                     tables = cur.fetchall()
                     if tables:
                         print("List of tables currently in the database:")
-                        for table in tables:
-                            print(table[0])
+                        for tabless in tables:
+                            print(tabless[0])
                 print(f"Table '{table}' dropped.")
             elif userinput == '2':
                 for col_name, col_def in columns.items():
@@ -586,6 +598,7 @@ def select_name_type():
         cur = conn.cursor()
         #creating cursor
         if not cur:
+        
             raise Exception('Connection failed.')
         else: print("Connected")
         sql = '''
@@ -608,6 +621,63 @@ def select_name_type():
         print("+------+---------------------------+-----------+-----------+")
         #printing results
 
+def get_pokemon_names():
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT name FROM pokemon")
+        rows = cur.fetchall()
+        # Flattening the list of tuples to a list of strings
+        pokemon_names = [row[0] for row in rows]
+    return pokemon_names
+
+def select_word():
+    return random.choice(get_pokemon_names()).upper()
+
+def display_current_progress(word, guessed_letters):
+    display = ''
+    for letter in word:
+        if letter in guessed_letters:
+            display += Colors.GREEN + letter + ' ' + Colors.RESET
+        else:
+            display += '_ '
+    return display.strip()
+
+
+def hangman():
+    word = select_word()
+    guessed_letters = set()
+    attempts = 6
+
+    print(Colors.CYAN + "This line was supposed to say welcome.\nPlease make your first guess." + Colors.RESET)
+    
+    while attempts > 0:
+        print("\nWord:", display_current_progress(word, guessed_letters))
+        print(Colors.YELLOW + f"Attempts left: {attempts}" + Colors.RESET)
+        print(Colors.MAGENTA + "Guessed letters:", ' '.join(sorted(guessed_letters)) + Colors.RESET)
+
+        guess = input(Colors.CYAN + "Guess a letter: " + Colors.RESET).upper()
+        if not guess.isalpha() or len(guess) != 1:
+            print(Colors.RED + "Invalid input. Please enter a single letter." + Colors.RESET)
+            continue
+
+        if guess in guessed_letters:
+            print(Colors.RED + "You have already guessed that letter." + Colors.RESET)
+            continue
+
+        guessed_letters.add(guess)
+
+        if guess in word:
+            print(Colors.GREEN + f"Ye sure.'{guess}' is in the word." + Colors.RESET)
+        else:
+            attempts -= 1
+            print(Colors.RED + f"CONGUATULATIONS! '{guess}' is not in the word." + Colors.RESET)
+
+        if all(letter in guessed_letters for letter in word):
+            print(Colors.GREEN + "\nNice. You've guessed the word:", word + Colors.RESET)
+            break
+    else:
+        print(Colors.RED + "\nWOMP WOMP. You failure. The word was", word + Colors.RESET)
+
 
 #main code
 def main():
@@ -620,7 +690,8 @@ def main():
         print("4. Custom query(Admin Only)")
         print("5. Add data to table")
         print("6. SANDSLASH!")
-        print("7. Exit")
+        print("7. Play Hangman")
+        print("8. Exit")
         if not admin:
             print("0. Admin Login\n")
         userinput = input('')
@@ -724,6 +795,8 @@ def main():
         elif userinput == '6':
             sandslash()
         elif userinput == '7':
+            hangman()
+        elif userinput == '8':
             print("Exited.")
             break
         else:
