@@ -646,7 +646,7 @@ def display_current_progress(word, guessed_letters):
 def hangman():
     word = select_word()
     guessed_letters = set()
-    attempts = 6
+    attempts = 8
 
     print(Colors.CYAN + "This line was supposed to say welcome.\nPlease make your first guess." + Colors.RESET)
     
@@ -670,7 +670,7 @@ def hangman():
             print(Colors.GREEN + f"Ye sure.'{guess}' is in the word." + Colors.RESET)
         else:
             attempts -= 1
-            print(Colors.RED + f"CONGUATULATIONS! '{guess}' is not in the word." + Colors.RESET)
+            print(Colors.RED + f"CONGUATULATIONS! '{guess}' is not in the word!" + Colors.RESET)
 
         if all(letter in guessed_letters for letter in word):
             print(Colors.GREEN + "\nNice. You've guessed the word:", word + Colors.RESET)
@@ -683,6 +683,7 @@ def hangman():
 def main():
     admin = False
     while True:
+        print(Colors.CYAN + "Welcome to my totally normal database.")
         print("\nWhat would you like to do?")
         print("1. Create a new table(Admin Only)")
         print("2. Fetch all data")
@@ -691,9 +692,9 @@ def main():
         print("5. Add data to table")
         print("6. SANDSLASH!")
         print("7. Play Hangman")
-        print("8. Exit")
+        print("8. Exit" + Colors.RESET)
         if not admin:
-            print("0. Admin Login\n")
+            print(Colors.RED + "0. Admin Login\n" + Colors.RESET)
         userinput = input('')
 
         if userinput == '0':
