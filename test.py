@@ -139,7 +139,7 @@ def admin_login(admin):
     Prompts the user to enter login details and verifies them
 
     Parameters:
-    admin : current login status
+    admin(boolean) : current login status
 
     Returns:
     Boolean based on login status
@@ -307,7 +307,8 @@ def ask_for_table_input():
             if col_def.lower() == STOP_CMD:
                 print("Cancelling table creation.")
                 return None, None
-        #
+            
+        #check if allow null
         allow_null = input(f"Should column '{col_name}' allow null values? (Y/N): ")
         if allow_null.lower() == STOP_CMD:
                 print("Cancelling table creation.")
@@ -332,6 +333,7 @@ def ask_for_table_input():
                 if is_primary_key.lower()== STOP_CMD:
                     print("Cancelling table creation.")
                     return None, None
+            #check if is primary key and proceed to auto increment check
             if is_primary_key.lower() == 'y':
                 primary_key = True
                 auto_increment = input(f"Should column '{col_name}' auto-increment? (Y/N): ").lower()
@@ -349,6 +351,7 @@ def ask_for_table_input():
                 else:
                     col_def += " PRIMARY KEY"
      
+        #check if foreign_key
         foreign_key = input(f"Is column '{col_name}' a foreign key? (Y/N): ")
         if foreign_key.lower()== STOP_CMD:
                 print("Cancelling table creation.")
@@ -385,7 +388,7 @@ def ask_for_table_input():
                     continue
             col_def += f" REFERENCES {ref_table}({ref_column})"
         columns[col_name] = col_def
-    
+    #cancel and return none if no columns
     if not columns:
         print("No columns defined. Cancelling table creation.")
         return None, None
@@ -402,6 +405,7 @@ def create_table(DATABASE, table, columns):
         if not cur:
             raise Exception('Connection failed.')
         cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name= ? ", (table,))
+        #if table exist then prompts user for further instructions
         if cur.fetchone():
             print(f"Table '{table}' already exists.")
             print("1. Drop the existing and create a new table")
@@ -574,7 +578,163 @@ def fetch_all_data():
         #print the results
         print_table(results)
 
+def sort_all_data():
+    """
+    Fetches all data and sorts/filters data based on user input.
+    """
+    s_column = input(Colors.CYAN + "Enter the column to sort by (id, name, total_stat, hp, atk, def, sp_atk, sp_def, spd, gen, legend, type1, type2): " + Colors.RESET).lower()
+    s_order = input("Enter the sort order (asc or desc): " + Colors.RESET).lower()
 
+    # Validate sort order
+    if s_order not in ['asc', 'desc']:
+        print(f"Invalid sort order '{s_order}'. Defaulting to 'asc'.")
+        s_order = 'asc'
+
+    f_column = input("Enter the column to filter by (or leave blank for no filter): ").lower()
+    filter_value = None
+
+    # Initial SQL query
+    sql = '''
+        SELECT p.id, p.name, p.total_stat, p.hp, p.atk, p.def, p.sp_atk, p.sp_def, p.spd, p.gen, p.legend, t1.name AS type1, t2.name AS type2
+        FROM pokemon p 
+        LEFT JOIN type AS t1 ON p.type_1 = t1.type_id 
+        LEFT JOIN type AS t2 ON p.type_2 = t2.type_id
+    '''
+
+    # Valid columns for sorting and filtering
+    valid_columns = ['id', 'name', 'total_stat', 'hp', 'atk', 'def', 'sp_atk', 'sp_def', 'spd', 'gen', 'legend', 'type1', 'type2']
+
+    # Add filter if f_column is valid
+    if f_column:
+        if f_column not in valid_columns:
+            print(f"Invalid filter column '{f_column}'. No filter will be applied.")
+        else:
+            filter_value = input(f"Enter the value to filter '{f_column}' by: ")
+            if f_column in ['type1', 'type2']:
+                sql += f" WHERE t1.name = ?" if f_column == 'type1' else " WHERE t2.name = ?"
+            else:
+                sql += f" WHERE p.{f_column} = ?"
+
+    # Add sorting if s_column is valid
+    if s_column not in valid_columns:
+        print(f"Invalid sort column '{s_column}'. Data will be fetched unsorted.")
+    else:
+        if s_column in ['type1', 'type2']:
+            s_column = 't1.name' if s_column == 'type1' else 't2.name'
+        else:
+            s_column = f"p.{s_column}"
+        sql += f" ORDER BY {s_column} {s_order.upper()}"
+
+    try:
+        with sqlite3.connect(DATABASE) as conn:
+            cur = conn.cursor()
+            if filter_value:
+                cur.execute(sql, (filter_value,))
+            else:
+                cur.execute(sql)
+            results = cur.fetchall()
+            print_table(results)
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
+
+def drop_table():
+    """
+    Prompts the user to drop table
+    """
+    print_databaseinfo()
+    table = input("Enter the name of the table you want to drop: ")
+    
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        if not cur:
+            raise Exception('Connection failed.')
+        
+        # Check if the table exists
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", (table,))
+        if not cur.fetchone():
+            print(f"Table '{table}' does not exist.")
+            return
+        
+        confirmation = input(f"Are you sure you want to drop the table '{table}'? This action cannot be undone. (Y/N): ").lower()
+        while confirmation not in YN:
+            print("Invalid input. Please enter 'Y' or 'N'.")
+            confirmation = input(f"Are you sure you want to drop the table '{table}'? This action cannot be undone. (Y/N): ").lower()
+        
+        if confirmation == 'y':
+            try:
+                cur.execute(f"DROP TABLE {table}")
+                conn.commit()
+                print(f"Table '{table}' dropped successfully.")
+            except sqlite3.OperationalError as e:
+                print(f"Error dropping table '{table}':", e)
+                conn.rollback()
+        else:
+            print("Table drop operation cancelled.")
+
+def delete_data_by_id():
+    """
+    Prompts the user for the table name and ID and deletes corresponding data
+    """
+    print_databaseinfo
+    table = input("Enter the name of the table you want to delete data from: ")
+    
+    with sqlite3.connect(DATABASE) as conn:
+        cur = conn.cursor()
+        if not cur:
+            raise Exception('Connection failed.')
+        
+        # Check if the table exists
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", (table,))
+        if not cur.fetchone():
+            print(f"Table '{table}' does not exist.")
+            return
+        
+        # Get the table's primary key column name
+        cur.execute(f"PRAGMA table_info('{table}')")
+        table_info = cur.fetchall()
+        primary_key_column = None
+        for column in table_info:
+            if column[5] == 1:
+                primary_key_column = column[1]
+                break
+        
+        if primary_key_column is None:
+            print(f"Table '{table}' does not have a primary key.")
+            return
+        
+        id = input(f"Enter the ID of the row you want to delete from table '{table}': ")
+        try:
+            id = int(id)
+        except ValueError:
+            print("Invalid ID. Please enter a valid integer ID.")
+            return
+        
+        # Check if the ID exists in the table
+        cur.execute(f"SELECT * FROM {table} WHERE {primary_key_column} = ?;", (id,))
+        row = cur.fetchone()
+        if not row:
+            print(f"ID '{id}' does not exist in table '{table}'.")
+            return
+        
+        # Print the row to be deleted
+        print("Row to be deleted:")
+        print(row)
+
+        confirmation = input(Colors.RED + f"Are you sure you want to delete the row with ID '{id}' from table '{table}'? This action cannot be undone. (Y/N): " + Colors.RESET).lower()
+        while confirmation not in YN:
+            print("Invalid input. Please enter 'Y' or 'N'.")
+            confirmation = input(Colors.RED + f"Are you sure you want to delete the row with ID '{id}' from table '{table}'? This action cannot be undone. (Y/N): " + Colors.RESET).lower()
+        
+        if confirmation == 'y':
+            try:
+                cur.execute(f"DELETE FROM {table} WHERE {primary_key_column} = ?;", (id,))
+                conn.commit()
+                print(f"Row with ID '{id}' deleted successfully from table '{table}'.")
+            except sqlite3.OperationalError as e:
+                print(f"Error deleting row with ID '{id}' from table '{table}':", e)
+                conn.rollback()
+        else:
+            print("Delete operation cancelled.")
 
 # Function to print data 
 def print_table(data):  
@@ -594,22 +754,21 @@ def print_table(data):
 def select_name_type():
 #creating func
     with sqlite3.connect(DATABASE) as conn:
-        #with statement
         cur = conn.cursor()
         #creating cursor
         if not cur:
-        
             raise Exception('Connection failed.')
         else: print("Connected")
+        #naming query
         sql = '''
         SELECT p.id, p.name, t1.name, t2.name FROM pokemon p 
         JOIN type as t1 on p.type_1 = t1.type_id 
         LEFT JOIN type as t2 on p.type_2 = t2.type_id;
         '''
-        #writing query
+        #execute
         cur.execute(sql)
         results = cur.fetchall()
-        #executing and fetching
+        #print in a table like format
         print("+------+-----------------+---------------+---------------+")
         print("|  ID  |      Name       |    Type 1     |    Type 2     |")
         print("+------+-----------------+---------------+---------------+")
@@ -619,46 +778,98 @@ def select_name_type():
             type_2 = type_2 if type_2 else "-"
             print(f"| {id_:<4} | {name:<25} | {type_1:<9} | {type_2:<9} |")
         print("+------+---------------------------+-----------+-----------+")
-        #printing results
 
 def get_pokemon_names():
+    """
+    Fetches Pokémon names and gen(for hints) from the database.
+
+    Returns:
+        list: A list of tuples that contains pokemon name and its generation.
+    """
     with sqlite3.connect(DATABASE) as conn:
         cur = conn.cursor()
-        cur.execute("SELECT name FROM pokemon")
+        if not cur:
+            raise Exception('Connection failed.')
+        else: print("Connected")
+        #select name and gen while excluding megas because they are annoying make work
+        cur.execute("SELECT name, gen FROM pokemon WHERE name NOT LIKE '%mega%'")
         rows = cur.fetchall()
-        # Flattening the list of tuples to a list of strings
-        pokemon_names = [row[0] for row in rows]
-    return pokemon_names
+        pokemon_data = [{'name': row[0], 'generation': row[1]} for row in rows]
+    return pokemon_data
 
 def select_word():
-    return random.choice(get_pokemon_names()).upper()
+    '''
+    randomly selects tuple from above function
+    
+    Returns: name and gen
+    '''
+    pokemon = random.choice(get_pokemon_names())
+    return pokemon['name'].upper(), pokemon['generation']
 
 def display_current_progress(word, guessed_letters):
+    """
+    Displays the current progress.
+
+    Args:
+        word (str): Poke name to be guessed.
+        guessed_letters (set): The set of letters that have been guessed so far.
+
+    Returns:
+        str: A string representing the current progress.
+    """
     display = ''
     for letter in word:
-        if letter in guessed_letters:
-            display += Colors.GREEN + letter + ' ' + Colors.RESET
+        if letter == ' ':
+            # Double space for potential spaces between words
+            display += '  ' 
+        elif letter in guessed_letters:
+            display += Colors.GREEN + letter + Colors.RESET
         else:
-            display += '_ '
+            display += '_'
     return display.strip()
 
 
 def hangman():
-    word = select_word()
-    guessed_letters = set()
+    '''
+    main function to play the game
+    '''
+    word, generation = select_word()
+    #set to store letters
+    guessed_letters = set() 
     attempts = 8
+    #check if hint used
+    hint_used = False
 
     print(Colors.CYAN + "This line was supposed to say welcome.\nPlease make your first guess." + Colors.RESET)
     
+
     while attempts > 0:
         print("\nWord:", display_current_progress(word, guessed_letters))
         print(Colors.YELLOW + f"Attempts left: {attempts}" + Colors.RESET)
         print(Colors.MAGENTA + "Guessed letters:", ' '.join(sorted(guessed_letters)) + Colors.RESET)
 
-        guess = input(Colors.CYAN + "Guess a letter: " + Colors.RESET).upper()
-        if not guess.isalpha() or len(guess) != 1:
-            print(Colors.RED + "Invalid input. Please enter a single letter." + Colors.RESET)
+        #prompts for guessing letters
+        if not hint_used:
+            guess = input(Colors.CYAN + '''Guess a letter (There could be space between letters) or type stop to exit. (Too hard? Try typing 'hint': '''+ Colors.RESET).upper()
+        #polish the prompt if hint used
+        if hint_used:
+            guess = input(Colors.CYAN + "Guess a letter or type stop to exit (There could be space between letters)" + Colors.RESET).upper()
+        if guess == 'STOP':
+            print(Colors.RED + "Game stopped by the user." + Colors.RESET)
+            print(Colors.RED + "\nWOMP WOMP. You failure. The word was", word + Colors.RESET)
+            break
+        if guess == 'HINT':
+            if not hint_used:
+                print(Colors.YELLOW + f"Hint: This Pokemon is definitely 100% seriously not from Generation {generation}." + Colors.RESET)
+                hint_used = True
+            else:
+                print(Colors.RED + "You have already used your hint." + Colors.RESET)
             continue
+        #check if a guess is a letter or ' '
+        if not (guess.isalpha() or guess == ' ') or len(guess) != 1:
+            print(Colors.RED + "Invalid input. Please enter a single letter or a space." + Colors.RESET)
+            continue
+
 
         if guess in guessed_letters:
             print(Colors.RED + "You have already guessed that letter." + Colors.RESET)
@@ -672,27 +883,36 @@ def hangman():
             attempts -= 1
             print(Colors.RED + f"CONGUATULATIONS! '{guess}' is not in the word!" + Colors.RESET)
 
-        if all(letter in guessed_letters for letter in word):
-            print(Colors.GREEN + "\nNice. You've guessed the word:", word + Colors.RESET)
+        if all(letter in guessed_letters or letter == ' ' for letter in word):
+            print(Colors.GREEN + "\nPretty good. You actually guessed the word:", word + Colors.RESET)
             break
     else:
         print(Colors.RED + "\nWOMP WOMP. You failure. The word was", word + Colors.RESET)
 
 
+ 
+
+
 #main code
 def main():
+    #set admin to false to help with admin verification
     admin = False
+    #while loop to ask user for instructions
     while True:
-        print(Colors.CYAN + "Welcome to my totally normal database.")
-        print("\nWhat would you like to do?")
+        print(Colors.CYAN + "\nWelcome to my totally normal database.")
+        print("What would you like to do?" + Colors.RESET)
         print("1. Create a new table(Admin Only)")
         print("2. Fetch all data")
         print("3. Select name and type(to be refined)")
         print("4. Custom query(Admin Only)")
-        print("5. Add data to table")
-        print("6. SANDSLASH!")
-        print("7. Play Hangman")
-        print("8. Exit" + Colors.RESET)
+        print("5. Add data to table(Admin Only)")
+        print("6. Drop table(Admin only)")
+        print("7. Delete data by id(admin only)")
+        print("8. Sort and filter all data")
+        print("9. SANDSLASH!")
+        print("10. Play Pokemon Offbrand Hangman")
+        print(Colors.GREEN + "11. Exit" + Colors.RESET)
+        #optional admin login that dissapears after login
         if not admin:
             print(Colors.RED + "0. Admin Login\n" + Colors.RESET)
         userinput = input('')
@@ -790,18 +1010,40 @@ def main():
             if admin:
                 print_databaseinfo()
                 add_data_to_table()
+        
+        elif userinput == '6' and admin:
+            print_databaseinfo()
+            drop_table()
 
+        elif userinput == '6' and not admin:
+            admin = admin_login(admin)
+            if admin:
+                print_databaseinfo()
+                drop_table()
 
+        elif userinput == '7' and admin:
+            print_databaseinfo()
+            delete_data_by_id()
 
-        elif userinput == '6':
-            sandslash()
-        elif userinput == '7':
-            hangman()
+        elif userinput == '7' and not admin:
+            admin = admin_login(admin)
+            if admin:
+                print_databaseinfo()
+                delete_data_by_id()
+
         elif userinput == '8':
+            sort_all_data()
+
+        elif userinput == '9':
+            sandslash()
+        elif userinput == '10':
+            hangman()
+        elif userinput == '11':
             print("Exited.")
             break
         else:
             print("Invalid input. Please enter a number between 1 and 8.")
+
 if __name__ == "__main__":
     main()
 
